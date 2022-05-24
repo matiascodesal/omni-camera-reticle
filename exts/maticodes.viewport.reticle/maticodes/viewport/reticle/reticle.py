@@ -1,6 +1,6 @@
 from functools import partial
 
-from omni.kit.widget.viewport import ViewportWidget
+from omni.kit.viewport_legacy import get_viewport_window_from_name
 import omni.ui as ui
 from omni.ui import color as cl
 from omni.ui import scene
@@ -28,13 +28,13 @@ class ReticleOverlay:
         self.vp_win = vp_win
         self.vp_win.set_height_changed_fn(self.on_window_changed)
         self.vp_win.set_width_changed_fn(self.on_window_changed)
-        self.vp_widget = ViewportWidget()
-        # Rebuild the overlay whenever the viewport changed (e.g. render resolution changes)
-        self._viewport_sub = self.vp_widget.viewport_api.subscribe_to_view_change(self.on_viewport_changed)
+
+        self.vp = get_viewport_window_from_name(self.vp_win.title)
         # Rebuild the overlay whenever the model changes
         self.model.add_reticle_changed_fn(self.build_viewport_overlay)
         ReticleOverlay._instances.append(self)
-        self._aspect_ratio = self.vp_widget.viewport_api.resolution[0] / self.vp_widget.viewport_api.resolution[1]
+        resolution = self.vp.get_texture_resolution()
+        self._aspect_ratio = resolution[0] / resolution[1]
 
     @classmethod
     def get_instances(cls):
@@ -42,20 +42,16 @@ class ReticleOverlay:
         return cls._instances
 
     def destroy(self):
-        self._viewport_sub = None
         self.vp_win.frame.clear()
         self.vp_win = None
-        self.vp_widget.destroy()
-        self.vp_widget = None
         self.reticle_menu.destroy()
         self.reticle_menu = None
         ReticleOverlay._instances.remove(self)
 
-    def on_viewport_changed(self, *args):
-        self._aspect_ratio = self.vp_widget.viewport_api.resolution[0] / self.vp_widget.viewport_api.resolution[1]
-        self.build_viewport_overlay()
-
     def on_window_changed(self, *args):
+        # TODO: Updating stored aspect ratio here, but should really do it on viewport texture resolution changes.
+        resolution = self.vp.get_texture_resolution()
+        self._aspect_ratio = resolution[0] / resolution[1]
         self.build_viewport_overlay()
 
     def get_aspect_ratio_flip_threshold(self):
@@ -69,36 +65,37 @@ class ReticleOverlay:
 
     def build_viewport_overlay(self, *args):
         """Build all viewport graphics and ReticleMenu button."""
-        self.vp_win.frame.clear()
-        with self.vp_win.frame:
-            with ui.ZStack():
-                if self.vp_win.width / self.vp_win.height > self.get_aspect_ratio_flip_threshold():
-                    self.scene_view = scene.SceneView(aspect_ratio_policy=scene.AspectRatioPolicy.PRESERVE_ASPECT_VERTICAL)
-                else:
-                    self.scene_view = scene.SceneView(aspect_ratio_policy=scene.AspectRatioPolicy.PRESERVE_ASPECT_HORIZONTAL)
-                with self.scene_view.scene:
-                    if self.model.composition_mode.as_int == CompositionGuidelines.THIRDS:
-                        self._build_thirds()
-                    elif self.model.composition_mode.as_int == CompositionGuidelines.QUAD:
-                        self._build_quad()
-                    elif self.model.composition_mode.as_int == CompositionGuidelines.CROSSHAIR:
-                        self._build_crosshair()
+        if self.vp_win is not None:
+            self.vp_win.frame.clear()
+            with self.vp_win.frame:
+                with ui.ZStack():
+                    if self.vp_win.width / self.vp_win.height > self.get_aspect_ratio_flip_threshold():
+                        self.scene_view = scene.SceneView(aspect_ratio_policy=scene.AspectRatioPolicy.PRESERVE_ASPECT_VERTICAL)
+                    else:
+                        self.scene_view = scene.SceneView(aspect_ratio_policy=scene.AspectRatioPolicy.PRESERVE_ASPECT_HORIZONTAL)
+                    with self.scene_view.scene:
+                        if self.model.composition_mode.as_int == CompositionGuidelines.THIRDS:
+                            self._build_thirds()
+                        elif self.model.composition_mode.as_int == CompositionGuidelines.QUAD:
+                            self._build_quad()
+                        elif self.model.composition_mode.as_int == CompositionGuidelines.CROSSHAIR:
+                            self._build_crosshair()
 
-                    if self.model.action_safe_enabled.as_bool:
-                        self._build_safe_rect(self.model.action_safe_percentage.as_float / 100.0,
-                                             color=cl.action_safe_default)
-                    if self.model.title_safe_enabled.as_bool:
-                        self._build_safe_rect(self.model.title_safe_percentage.as_float / 100.0,
-                                             color=cl.title_safe_default)
-                    if self.model.custom_safe_enabled.as_bool:
-                        self._build_safe_rect(self.model.custom_safe_percentage.as_float / 100.0,
-                                             color=cl.custom_safe_default)
-                    if self.model.letterbox_enabled.as_bool:
-                        self._build_letterbox()
+                        if self.model.action_safe_enabled.as_bool:
+                            self._build_safe_rect(self.model.action_safe_percentage.as_float / 100.0,
+                                                color=cl.action_safe_default)
+                        if self.model.title_safe_enabled.as_bool:
+                            self._build_safe_rect(self.model.title_safe_percentage.as_float / 100.0,
+                                                color=cl.title_safe_default)
+                        if self.model.custom_safe_enabled.as_bool:
+                            self._build_safe_rect(self.model.custom_safe_percentage.as_float / 100.0,
+                                                color=cl.custom_safe_default)
+                        if self.model.letterbox_enabled.as_bool:
+                            self._build_letterbox()
 
-                with ui.VStack():
-                    ui.Spacer()
-                    self.reticle_menu = ReticleMenu(self.model)
+                    with ui.VStack():
+                        ui.Spacer()
+                        self.reticle_menu = ReticleMenu(self.model)
 
     def _build_thirds(self):
         """Build the scene ui graphics for the Thirds composition mode."""
@@ -220,7 +217,7 @@ class ReticleMenu:
         self.button = ui.Button("Reticle", width=0, height=0, mouse_pressed_fn=self.show_reticle_menu,
                                 style={"margin": 10, "padding": 5, "color": cl.white})
         self.reticle_menu = None
-    
+
     def destroy(self):
         self.button.destroy()
         self.button = None
