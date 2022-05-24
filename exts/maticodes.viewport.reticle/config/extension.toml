@@ -1,5 +1,5 @@
 [package]
-version = "1.1.0"
+version = "1.2.0"
 title = "Camera Reticle"
 description="Adds a camera reticle featuring composition guidelines, safe area guidelines, and letterbox."
 authors=["Matias Codesal <mati@matiascodesal.com>"]

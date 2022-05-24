@@ -3,6 +3,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.2.0] - 2022-05-24
+### Changed
+- Refactored to use VP1 instead of hybrid VP1/2
+- Renamed "draw" functions to "build"
+- Moved color constants to omni.ui.color
+
 ## [1.1.0] - 2022-03-31
 ### Changed
 - Improved the cleanup code when the extension is shutdown.
