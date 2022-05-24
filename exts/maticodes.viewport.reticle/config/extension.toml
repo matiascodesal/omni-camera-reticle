@@ -14,7 +14,6 @@ icon = "icons/icon.png"
 
 # Use omni.ui to build simple UI
 [dependencies]
-"omni.kit.uiapp" = {}
 "omni.ui.scene" = {}
 "omni.kit.widget.viewport" = {}
 
