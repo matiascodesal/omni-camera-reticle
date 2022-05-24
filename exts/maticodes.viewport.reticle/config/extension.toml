@@ -1,5 +1,5 @@
 [package]
-version = "1.1.0"
+version = "1.2.0"
 title = "Camera Reticle"
 description="Adds a camera reticle featuring composition guidelines, safe area guidelines, and letterbox."
 authors=["Matias Codesal <mati@matiascodesal.com>"]
@@ -14,9 +14,7 @@ icon = "icons/icon.png"
 
 # Use omni.ui to build simple UI
 [dependencies]
-"omni.kit.uiapp" = {}
 "omni.ui.scene" = {}
-"omni.kit.widget.viewport" = {}
 
 # Main python module this extension provides, it will be publicly available as "import omni.hello.world".
 [[python.module]]

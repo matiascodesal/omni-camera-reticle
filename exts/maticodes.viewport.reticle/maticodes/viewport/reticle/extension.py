@@ -30,7 +30,7 @@ class CameraReticleExtension(omni.ext.IExt):
     def create_new_reticle_overlay(vp_win):
         reticle_model = ReticleModel()
         reticle = ReticleOverlay(reticle_model, vp_win)
-        reticle.draw_viewport_overlay()
+        reticle.build_viewport_overlay()
 
     @staticmethod
     def on_window_created(win_handle):

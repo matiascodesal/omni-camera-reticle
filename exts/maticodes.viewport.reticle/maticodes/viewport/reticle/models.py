@@ -50,7 +50,7 @@ class ReticleModel:
     def add_reticle_changed_fn(self, callback):
         """Add a callback to be executed whenever any ReticleModel submodel data changes.
 
-        This is useful for redrawing the overlay whenever any data changes.
+        This is useful for rebuilding the overlay whenever any data changes.
 
         Args:
             callback (function): The function to call when the reticle model changes.
