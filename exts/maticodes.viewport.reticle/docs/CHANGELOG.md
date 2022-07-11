@@ -3,6 +3,15 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.3.0] - 2022-07-10
+### Added
+- `omni.kit.viewport.utility` dependency.
+
+### Changed
+- Refactored to use `omni.kit.viewport.utility`. (Only works with Kit 103.1.2+ now.)
+- Renamed `reticle.py` to `views.py`
+- Moved **Reticle** button to the bottom right of the viewport instead of bottom left.
+
 ## [1.2.0] - 2022-05-24
 ### Changed
 - Refactored to use VP1 instead of hybrid VP1/2
