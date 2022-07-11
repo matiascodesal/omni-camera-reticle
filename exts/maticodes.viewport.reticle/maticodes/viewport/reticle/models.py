@@ -1,7 +1,7 @@
 """Models used by the CameraReticleExtension"""
 import omni.ui as ui
 
-from maticodes.viewport.reticle import constants
+from . import constants
 
 
 class ReticleModel:
