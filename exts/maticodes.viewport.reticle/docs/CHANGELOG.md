@@ -3,6 +3,11 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.4.0] - 2022-09-09
+### Added
+- Fixed bad use of viewport window frame for VP Next
+- Now use ViewportAPI.subscribe_to_view_change() on VP Next
+
 ## [1.3.0] - 2022-07-10
 ### Added
 - `omni.kit.viewport.utility` dependency.

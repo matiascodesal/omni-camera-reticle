@@ -18,26 +18,27 @@ class ReticleOverlay:
     """
     _instances = []
 
-    def __init__(self, model: ReticleModel, vp_win):
+    def __init__(self, model: ReticleModel, vp_win: ui.Window, ext_id: str):
         """ReticleOverlay constructor
 
         Args:
             model (ReticleModel): The reticle model
             vp_win (Window): The viewport window to build the overlay on.
+            ext_id (str): The extension id.
         """
         self.model = model
         self.vp_win = vp_win
+        self.ext_id = ext_id
         # Rebuild the overlay whenever the viewport window changes
         self.vp_win.set_height_changed_fn(self.on_window_changed)
         self.vp_win.set_width_changed_fn(self.on_window_changed)
-        settings = carb.settings.get_settings()
-        self._viewport_subs = []
-        self._viewport_subs.append(settings.subscribe_to_node_change_events(constants.SETTING_RESOLUTION_WIDTH,
-                                                                            self.on_window_changed))
-        self._viewport_subs.append(settings.subscribe_to_node_change_events(constants.SETTING_RESOLUTION_HEIGHT,
-                                                                            self.on_window_changed))
-        self._viewport_subs.append(settings.subscribe_to_node_change_events(constants.SETTING_RESOLUTION_FILL,
-                                                                            self.on_window_changed))
+        self._view_change_sub = None
+        try:
+            # VP2 resolution change sub
+            self._view_change_sub = self.vp_win.viewport_api.subscribe_to_view_change(self.on_window_changed)
+        except AttributeError:
+            carb.log_info("Using Viewport Legacy: Reticle will not automatically update on resolution changes.")
+
         # Rebuild the overlay whenever the model changes
         self.model.add_reticle_changed_fn(self.build_viewport_overlay)
         ReticleOverlay._instances.append(self)
@@ -49,29 +50,33 @@ class ReticleOverlay:
         """Get all created instances of ReticleOverlay"""
         return cls._instances
 
+    def __del__(self):
+        self.destroy()
+
     def destroy(self):
-        settings = carb.settings.get_settings()
-        for sub in self._viewport_subs:
-            settings.unsubscribe_to_change_events(sub)
-        self._viewport_subs = None
+        self._view_change_sub = None
         self.scene_view.scene.clear()
         self.scene_view = None
         self.reticle_menu.destroy()
         self.reticle_menu = None
-        self.vp_win.frame.clear()
-        self.vp_win.destroy()
         self.vp_win = None
 
     def on_window_changed(self, *args):
         """Update aspect ratio and rebuild overlay when viewport window changes."""
+        if self.vp_win is None:
+            return
+
         settings = carb.settings.get_settings()
-        fill = settings.get(constants.SETTING_RESOLUTION_FILL)
+        if type(self.vp_win).__name__ == "LegacyViewportWindow":
+            fill = settings.get(constants.SETTING_RESOLUTION_FILL)
+        else:
+            fill = self.vp_win.viewport_api.fill_frame
+
         if fill:
             width = self.vp_win.frame.computed_width + 8
             height = self.vp_win.height
         else:
-            width = settings.get(constants.SETTING_RESOLUTION_WIDTH)
-            height = settings.get(constants.SETTING_RESOLUTION_HEIGHT)
+            width, height = self.vp_win.viewport_api.resolution
         self._aspect_ratio = width / height
         self.build_viewport_overlay()
 
@@ -86,8 +91,7 @@ class ReticleOverlay:
     def build_viewport_overlay(self, *args):
         """Build all viewport graphics and ReticleMenu button."""
         if self.vp_win is not None:
-            self.vp_win.frame.clear()
-            with self.vp_win.frame:
+            with self.vp_win.get_frame(self.ext_id):
                 with ui.ZStack():
                     # Set the aspect ratio policy depending if the viewport is wider than it is taller or vice versa.
                     if self.vp_win.width / self.vp_win.height > self.get_aspect_ratio_flip_threshold():
